@@ -90,6 +90,8 @@ def get_uri_data(uri)
         return agent_get(uri), true
     rescue Mechanize::ResponseCodeError => exception
         if exception.response_code == '403'
+            # getのメッセージが残るので改行する
+            p
             p uri.to_s + " has forbiddin."
             # STDERR.puts exception.backtrace.join("\n")
             return nil, false
