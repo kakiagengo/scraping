@@ -701,12 +701,12 @@ if __FILE__ == $0
             add_html_mapping("http://noahgate.com/story/show?card_key=" + now_heroine.card_key, "./" + now_heroine.heroine_directory_name + ".html")
 
             # リンクの書き換えの前に同名ヒロインブロックを削除する
-            # h4, a, div, br
+            # h4の次の a, div, br 要素を削除
             same_name_heroine = heroine_page.search('//h4')
             unless same_name_heroine.nil? then
-                heroine_page.search('//h4/following-sibling::a').remove
-                heroine_page.search('//h4/following-sibling::div').remove
-                heroine_page.search('//h4/following-sibling::br').remove
+                heroine_page.search('//h4/following-sibling::a[1]').remove
+                heroine_page.search('//h4/following-sibling::div[1]').remove
+                heroine_page.search('//h4/following-sibling::br[1]').remove
                 # 起点となるh4は最後に消す
                 same_name_heroine.remove
             end
