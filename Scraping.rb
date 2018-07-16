@@ -467,7 +467,7 @@ class Heroine
                 end
 
                 # name と chara["id"] (の末尾、または先頭)が一致しない場合は warning 多分ゲーム側のバグ
-                unless name.rpartition("_").last == chara["id"].rpartition("_").last || name.lpartition("_").first == chara["id"].lpartition("_").first then
+                unless name.rpartition("_").last == chara["id"].rpartition("_").last || name.partition("_").first == chara["id"].partition("_").first then
                     pp "warn : #{@heroine_directory_path}#{image_file_name} : name and chara[\"id\"] not matched. name : '#{name}', chara[\"id\"] : #{chara["id"]}"
                 end
 
