@@ -652,7 +652,11 @@ if __FILE__ == $0
 
             # voice_button 書き換え
             voice_buttons.each_with_index do |each_button, index|
-                each_button["data-key"] = "card_" + (index + 1).to_s
+                use_index = index + 1
+                if use_index > 2 then
+                    use_index = 2
+                end
+                each_button["data-key"] = "card_" + use_index.to_s
             end
 
             # storyページの保存
