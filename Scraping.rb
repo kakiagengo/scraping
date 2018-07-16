@@ -13,6 +13,7 @@ $heroine_base_url = "http://noahgate.com/library/show?card_key="
 $heroine_hitokoto_base_uri = "http://d3f1nvrmws0ea2.cloudfront.net/sound/voice/"
 $dir_path = "./data/"
 $global_dir = "global/"
+$global_noah_flag = false # ノアの共用シーン画像保存フラグ
 
 # ここにブラウザのCookieから取得したSessionIDを入れる
 # このIDがあると成りすまして他人がログインできるので絶対に公開しないこと
@@ -255,11 +256,11 @@ def story_rewrite_js_base_path(page)
     # pp base_path_script
     # "bg"    : "http://d3f1nvrmws0ea2.cloudfront.net/img/novel/bg/",
     # pp base_path_script.content.match(/(\"bg\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/)
-    base_path_script.content = base_path_script.content.gsub!(/(\"bg\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"bg"    : "../global/"')
+    base_path_script.content = base_path_script.content.gsub!(/(\"bg\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"bg"    : "../' + $global_dir + '"')
     # "emotion" : "http://d3f1nvrmws0ea2.cloudfront.net/img/novel/emotion/",
-    base_path_script.content = base_path_script.content.gsub!(/(\"emotion\"[^\n]}*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"emotion" : "../global/"')
+    base_path_script.content = base_path_script.content.gsub!(/(\"emotion\"[^\n]}*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"emotion" : "../' + $global_dir + '"')
     # "ui"    : "http://d3f1nvrmws0ea2.cloudfront.net/img/ui/novel/",
-    base_path_script.content = base_path_script.content.gsub!(/(\"ui\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"ui"    : "../global/"')
+    base_path_script.content = base_path_script.content.gsub!(/(\"ui\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"ui"    : "../' + $global_dir + '"')
     # "sound" : "http://d3f1nvrmws0ea2.cloudfront.net/sound/scenario_data/8202d1c43093bd88a895ea4c961cf7f3/",
     base_path_script.content = base_path_script.content.gsub!(/(\"sound\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"sound" : "./"')
     # "chara" : "http://d3f1nvrmws0ea2.cloudfront.net/img/scenario_data/8202d1c43093bd88a895ea4c961cf7f3/",
@@ -434,11 +435,25 @@ class Heroine
         end
 
         # 画像保存
+        chara_id_set = []
         scenario_setting["chara"].each do |name, chara|
             unless chara["src"].nil? || chara["src"].empty? then
-                image_index = chara["id"].rpartition("_").last.to_i
-                image_file_name = output_keyword_data(uri: base_image_path + chara["src"], keyword: "scenario_image_" + index.to_s, index: image_index)
-
+                if chara["src"] == "851edcbc47d806a3a55f19ee75593608.png" # このファイルの場合ノア固定
+                    # globalに保存
+                    unless $global_noah_flag then
+                         output_global_data(base_image_path + chara["src"])
+                         $global_noah_flag = true
+                    end
+                    image_file_name = "../global/851edcbc47d806a3a55f19ee75593608.png"
+                else
+                    chara_id = chara["id"]
+                    unless chara_id_set.include?(chara_id) then
+                        chara_id_set.push(chara_id)
+                    else
+                        pp "chara_id conflict! :" +  @heroine_directory_path + "scenario_image_" + index.to_s + "_" + chara_id.to_s
+                    end
+                    image_file_name = output_keyword_data(uri: base_image_path + chara["src"], keyword: "scenario_image_" + index.to_s , index: chara_id)
+                end
                 # シナリオの画像書き換え
                 scenario_setting_js_element.content = scenario_setting_js_element.content.gsub!(chara["src"], image_file_name)
             end
@@ -518,9 +533,8 @@ end
 if __FILE__ == $0
 
     libray_page_number = 1 # TODO default 1
-    pp "now libray_libray_page_number:" + libray_page_number.to_s + " scraping."
-
     while true
+    pp "now libray_libray_page_number:" + libray_page_number.to_s + " scraping."
         # アルバム一覧ページ取得
         libray_page = get_uri_html($page_base_url + libray_page_number.to_s)
 
@@ -608,6 +622,7 @@ if __FILE__ == $0
             end
 
             # storyページの保存
+            # TODO default start 1
             (1..heroine_page.search("div.grid__col_md_5 > a").count).each{|n|
                 output_story_path, success = now_heroine.output_story_page(n)
                 unless success then
