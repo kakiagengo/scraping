@@ -606,7 +606,7 @@ if __FILE__ == $0
                     p now_heroine.card_key + "_" + now_heroine.name + "_" + now_heroine.rare + ", scene: " + n.to_s + " has not found."
                     break
                 end
-                #break # テスト用 TODO delete
+                # break # テスト用 TODO delete
             }
 
             # htmlの編集 > 全てのHTMLに適応？
@@ -645,13 +645,24 @@ if __FILE__ == $0
             # storyへの遷移を自己リンクへ変更する
             add_html_mapping("http://noahgate.com/story/show?card_key=" + now_heroine.card_key, "./" + now_heroine.heroine_directory_name + ".html")
 
+            # リンクの書き換えの前に同名ヒロインブロックを削除する
+            # h4, a, div, br
+            same_name_heroine = heroine_page.at('//h4')
+            unless same_name_heroine.nil? then
+                heroine_page.at('//h4/following-sibling::a').remove
+                heroine_page.at('//h4/following-sibling::div').remove
+                heroine_page.at('//h4/following-sibling::br').remove
+                # 起点となるh4は最後に消す
+                same_name_heroine.remove
+            end
+
             # linkの書き換え
             common_a_link_rewrite(heroine_page)
 
             # ヒロインページの保存
             local_heroine_page_path = output_file(heroine_page, now_heroine.heroine_directory_name + ".html")
 
-            #break # テスト用 1ヒロインで止める TODO delete
+            # break # テスト用 1ヒロインで止める TODO delete
         end
 
         # htmlの編集 > 全てのHTMLに適応？
@@ -680,7 +691,7 @@ if __FILE__ == $0
 
         # mapping作成
 
-        #break #TODO delete
+        # break #TODO delete
         libray_page_number += 1
     end
 
