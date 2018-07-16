@@ -43,15 +43,22 @@ def agent_get(uri)
     end
 end
 
+def print_get(uri)
+    print_str = "get #{uri}"
+    print print_str
+    page = $agent.get(uri)
+    print "\r#{' ' * print_str.size}\r"
+    return page
+end
 
 def no_wait_get(uri)
     $agent.history_added = $no_wait_proc
-    return $agent.get(uri)
+    return print_get(uri)
 end
 
 def wait_get(uri)
     $agent.history_added = $wait_proc
-    return $agent.get(uri)
+    return print_get(uri)
 end
 
 
@@ -160,8 +167,6 @@ def output_global_data(uri)
         uri_obj = URI.parse(uri)
         file_name = translate_uri_to_local_file(uri_obj)
         unless $global_uri_mapping_reverse[file_name].nil? then
-            pp "warning!!" + file_name + " is conflict!!"
-            pp "$global_uri_mapping_reverse[file_name]:" + $global_uri_mapping_reverse[file_name]
             file_body_name = get_body_file_name_from_uri(file_name)
             file_ext_name = get_ext_from_uri(file_name)
             now_file_name = file_name
@@ -171,6 +176,9 @@ def output_global_data(uri)
                 pp now_file_name
                 index = index + 1
             end
+            pp "info: file_name:'" + file_name + "' is conflict!! rename file to now_file_name:'" + now_file_name + "'"
+            pp "info: '" + uri.to_s + "' is uri."
+            pp "info: '" + $global_uri_mapping_reverse[file_name] + "' is $global_uri_mapping_reverse[file_name]."
             file_name = now_file_name
         end
         file_path = $dir_path + $global_dir + file_name
@@ -191,7 +199,7 @@ def output_global_data(uri)
 end
 
 # 共通script削除処理
-def delete_common_script(page, scenario=false)
+def delete_common_script(page)
     # script の削除 search しながら消すと位置がずれるのでやらない
     page_scripts = page.search("script")
     page_scripts[0].remove # newrelic関連
