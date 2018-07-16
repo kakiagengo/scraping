@@ -91,7 +91,7 @@ def get_uri_data(uri)
     rescue Mechanize::ResponseCodeError => exception
         if exception.response_code == '403'
             # getのメッセージが残るので改行する
-            p
+            p "\n"
             p uri.to_s + " has forbiddin."
             # STDERR.puts exception.backtrace.join("\n")
             return nil, false
@@ -469,7 +469,7 @@ class Heroine
                 end
 
                 # name と chara["id"] (の末尾、または先頭)が一致しない場合は warning 多分ゲーム側のバグ
-                if name.rpartition("_").last != chara["id"].rpartition("_").last || name.partition("_").first != chara["id"].partition("_").first then
+                if (!(name.include?("_") || !chara["id"].include?("_")) && name == chara["id"] ) || name.rpartition("_").last != chara["id"].rpartition("_").last || name.partition("_").first != chara["id"].partition("_").first then
                     pp "warn : #{@heroine_directory_path}#{image_file_name} : name and chara[\"id\"] not matched. name : '#{name}', chara[\"id\"] : #{chara["id"]}"
                 end
 
