@@ -465,14 +465,25 @@ class Heroine
                     end
                     image_file_name = output_keyword_data(uri: base_image_path + chara["src"], keyword: "scenario_image_" + index.to_s , index: name)
                 end
-                chara_name_to_src_hash[name] = chara["src"]
+
+                # name と chara["id"] (の末尾、または先頭)が一致しない場合は warning 多分ゲーム側のバグ
+                unless name.rpartition("_").last == chara["id"].rpartition("_").last || name.lpartition("_").first == chara["id"].lpartition("_").first then
+                    pp "warn : #{@heroine_directory_path}#{image_file_name} : name and chara[\"id\"] not matched. name : '#{name}', chara[\"id\"] : #{chara["id"]}"
+                end
+
+                # 同じファイル名があった場合は warning 多分ゲーム側のバグ
+                if chara_name_to_src_hash.has_value?(chara["src"])
+                    pp "warn : #{@heroine_directory_path}#{image_file_name} : dupulicate chara[\"src\"] : #{chara["src"]} ."
+                end
+
                 # シナリオの画像書き換え
-                # pp chara["src"] + " to " + image_file_name
                 # 同じファイル名があった場合に置換が空振りするのでチェック
-                if chara_name_to_src_hash.has_value?(chara["src"]) then
+                unless chara_name_to_src_hash.has_value?(chara["src"]) then
+                    # pp "chara image transfer :" + chara["src"] + " to " + image_file_name + "."
                     update_content(scenario_setting_js_element, scenario_setting_js_element.content.gsub!(chara["src"], image_file_name))
+                end
+                chara_name_to_src_hash[name] = chara["src"]
             end
-        end
         end
 
         # シナリオデータ保存
