@@ -243,7 +243,7 @@ def card_rewrite_js_base_path(page, heroine_directory_name)
         # pp base_path_script
         rewrite_base_path = "'./" + heroine_directory_name + "/'"
         rewrite_base_path_script = base_path_script.child.text.gsub!(/[\"\'](http:\/\/[^\"\']+\/?)[\"\']/, rewrite_base_path)
-        base_path_script.content = rewrite_base_path_script
+        update_content(base_path_script, rewrite_base_path_script)
         # pp "after base_path:"
         # pp base_path_script
     end
@@ -256,17 +256,17 @@ def story_rewrite_js_base_path(page)
     # pp base_path_script
     # "bg"    : "http://d3f1nvrmws0ea2.cloudfront.net/img/novel/bg/",
     # pp base_path_script.content.match(/(\"bg\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/)
-    base_path_script.content = base_path_script.content.gsub!(/(\"bg\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"bg"    : "../' + $global_dir + '"')
+    update_content(base_path_script, base_path_script.content.gsub!(/(\"bg\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"bg"    : "../' + $global_dir + '"'))
     # "emotion" : "http://d3f1nvrmws0ea2.cloudfront.net/img/novel/emotion/",
-    base_path_script.content = base_path_script.content.gsub!(/(\"emotion\"[^\n]}*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"emotion" : "../' + $global_dir + '"')
+    update_content(base_path_script, base_path_script.content.gsub!(/(\"emotion\"[^\n]}*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"emotion" : "../' + $global_dir + '"'))
     # "ui"    : "http://d3f1nvrmws0ea2.cloudfront.net/img/ui/novel/",
-    base_path_script.content = base_path_script.content.gsub!(/(\"ui\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"ui"    : "../' + $global_dir + '"')
+    update_content(base_path_script, base_path_script.content.gsub!(/(\"ui\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"ui"    : "../' + $global_dir + '"'))
     # "sound" : "http://d3f1nvrmws0ea2.cloudfront.net/sound/scenario_data/8202d1c43093bd88a895ea4c961cf7f3/",
-    base_path_script.content = base_path_script.content.gsub!(/(\"sound\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"sound" : "./"')
+    update_content(base_path_script, base_path_script.content.gsub!(/(\"sound\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"sound" : "./"'))
     # "chara" : "http://d3f1nvrmws0ea2.cloudfront.net/img/scenario_data/8202d1c43093bd88a895ea4c961cf7f3/",
-    base_path_script.content = base_path_script.content.gsub!(/(\"chara\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"chara" : "./"')
+    update_content(base_path_script, base_path_script.content.gsub!(/(\"chara\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"chara" : "./"'))
     # "movie" : "http://d3f1nvrmws0ea2.cloudfront.net/img/scenario_data/8202d1c43093bd88a895ea4c961cf7f3/",
-    base_path_script.content = base_path_script.content.gsub!(/(\"movie\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"movie" : "./"')
+    update_content(base_path_script, base_path_script.content.gsub!(/(\"movie\"[^\n]*\:[^\n]*")http\:\/\/[^\n]+(\")/, '"movie" : "./"'))
 
     # pp "after base_path:"
     # pp base_path_script
@@ -321,6 +321,17 @@ def rewrite_css_file
             file.write buffer
         end
     end
+end
+
+# content書き換え
+# 空白の場合正しくないことが多いのでロジック集約
+def update_content(old, new_content)
+    if new_content.nil? || new_content.empty? then
+        pp "update_content by empty."
+        STDERR.puts caller
+        pp old
+    end
+    old.content = new_content
 end
 
 # ヒロインの情報
@@ -435,7 +446,10 @@ class Heroine
         end
 
         # 画像保存
-        chara_id_set = []
+        # chara["id"] が一意で無い場合がある
+        # name と chara["id"] が一致しない場合がある
+        # 上記の場合において、 name で表示されているので name を真とする
+        chara_name_to_src_hash = {}
         scenario_setting["chara"].each do |name, chara|
             unless chara["src"].nil? || chara["src"].empty? then
                 if chara["src"] == "851edcbc47d806a3a55f19ee75593608.png" # このファイルの場合ノア固定
@@ -446,17 +460,19 @@ class Heroine
                     end
                     image_file_name = "../global/851edcbc47d806a3a55f19ee75593608.png"
                 else
-                    chara_id = chara["id"]
-                    unless chara_id_set.include?(chara_id) then
-                        chara_id_set.push(chara_id)
-                    else
-                        pp "chara_id conflict! :" +  @heroine_directory_path + "scenario_image_" + index.to_s + "_" + chara_id.to_s
+                    if chara_name_to_src_hash.has_key?(name) then
+                        pp "name conflict! :" +  @heroine_directory_path + "scenario_image_" + index.to_s + "_" + + name.to_s
                     end
-                    image_file_name = output_keyword_data(uri: base_image_path + chara["src"], keyword: "scenario_image_" + index.to_s , index: chara_id)
+                    image_file_name = output_keyword_data(uri: base_image_path + chara["src"], keyword: "scenario_image_" + index.to_s , index: name)
                 end
+                chara_name_to_src_hash[name] = chara["src"]
                 # シナリオの画像書き換え
-                scenario_setting_js_element.content = scenario_setting_js_element.content.gsub!(chara["src"], image_file_name)
+                # pp chara["src"] + " to " + image_file_name
+                # 同じファイル名があった場合に置換が空振りするのでチェック
+                if chara_name_to_src_hash.has_value?(chara["src"]) then
+                    update_content(scenario_setting_js_element, scenario_setting_js_element.content.gsub!(chara["src"], image_file_name))
             end
+        end
         end
 
         # シナリオデータ保存
@@ -487,7 +503,7 @@ class Heroine
                     # pp name, movie
                     movie_file_name = output_keyword_data(uri: base_movie_path + movie, keyword: "scenario_movie_" + index.to_s, index: index_movie + 1)
                     # シナリオの movie 書き換え
-                    scenario_setting_js_element.content = scenario_setting_js_element.content.gsub!(movie, movie_file_name)
+                    update_content(scenario_setting_js_element, scenario_setting_js_element.content.gsub!(movie, movie_file_name))
                 end
             end
         end
@@ -506,11 +522,16 @@ class Heroine
         # "../" + now_heroine.heroine_directory_name + ".html"
         # "nextUrl" :"/story/show?card_key=40011"
         base_setting_js_element.content.match(/(\"nextUrl\"[^\n\"]+\")\/[^\n\"]+(\")/) # 先にmatchしておかないと正しく置換されない 謎
-        base_setting_js_element.content = base_setting_js_element.content.gsub!(/(\"nextUrl\"[^\n\"]+\")\/[^\n\"]+(\")/, "#{$1}../#{heroine_directory_name}.html#{$2}")
+        update_content(base_setting_js_element, base_setting_js_element.content.gsub!(/(\"nextUrl\"[^\n\"]+\")\/[^\n\"]+(\")/, "#{$1}../#{heroine_directory_name}.html#{$2}"))
         # pp base_setting_js_element
         # nickname 書き換え
         base_setting_js_element.content.match(/(\"nickname\"[^\n\"]+\")[^\n\"]+(\")/) # 先にmatchしておかないと正しく置換されない 謎
-        base_setting_js_element.content = base_setting_js_element.content.gsub!(/(\"nickname\"[^\n\"]+\")[^\n\"]+(\")/, "#{$1}#{$2}")
+        update_content(base_setting_js_element, base_setting_js_element.content.gsub!(/(\"nickname\"[^\n\"]+\")[^\n\"]+(\")/, "#{$1}#{$2}"))
+
+        story_page.search('//div[@id="no_support"]').remove
+        story_page.search('//div[@id="popup_menu"]').remove
+        story_page.search('//div[@class="global_menu"]').remove
+        story_page.search('//script').last.remove
 
         # base_path 書き換え
         story_rewrite_js_base_path(story_page)
@@ -634,12 +655,12 @@ if __FILE__ == $0
 
             # htmlの編集 > 全てのHTMLに適応？
             # 不要な要素
-            heroine_page.at('//div[@id="no_support"]').remove
-            heroine_page.at('//div[@id="popup_menu"]').remove
-            heroine_page.at('//div[@class="side__banner_menu"]').remove
-            heroine_page.at('//div[@class="side__menu"]').remove
-            heroine_page.at('//div[@class="global_menu"]').remove
-            btn_primary = heroine_page.at('//a[@class="btn_primary medium"]')
+            heroine_page.search('//div[@id="no_support"]').remove
+            heroine_page.search('//div[@id="popup_menu"]').remove
+            heroine_page.search('//div[@class="side__banner_menu"]').remove
+            heroine_page.search('//div[@class="side__menu"]').remove
+            heroine_page.search('//div[@class="global_menu"]').remove
+            btn_primary = heroine_page.search('//a[@class="btn_primary medium"]')
             # 武具ページにはこの要素が無いらしい
             unless btn_primary.nil? then
                 btn_primary.remove
@@ -670,11 +691,11 @@ if __FILE__ == $0
 
             # リンクの書き換えの前に同名ヒロインブロックを削除する
             # h4, a, div, br
-            same_name_heroine = heroine_page.at('//h4')
+            same_name_heroine = heroine_page.search('//h4')
             unless same_name_heroine.nil? then
-                heroine_page.at('//h4/following-sibling::a').remove
-                heroine_page.at('//h4/following-sibling::div').remove
-                heroine_page.at('//h4/following-sibling::br').remove
+                heroine_page.search('//h4/following-sibling::a').remove
+                heroine_page.search('//h4/following-sibling::div').remove
+                heroine_page.search('//h4/following-sibling::br').remove
                 # 起点となるh4は最後に消す
                 same_name_heroine.remove
             end
@@ -688,15 +709,15 @@ if __FILE__ == $0
             # break # テスト用 1ヒロインで止める TODO delete
         end
 
-        # htmlの編集 > 全てのHTMLに適応？
+        # htmlの編集
         # 不要な要素
-        libray_page.at('//div[@id="popup_menu"]').remove
-        libray_page.at('//header').remove
-        libray_page.at('//div[@class="rightMenu "]').remove
-        libray_page.at('//div[@id="outofmain"]').remove
-        libray_page.at('//a[@class="helpbtnarea"]').remove
-        libray_page.at('//div[@class="backbtnarea pc_txt_shadow"]').remove
-        libray_page.at('//div[@class="grid__row util__m0 util__mt20"]').remove
+        libray_page.search('//div[@id="popup_menu"]').remove
+        libray_page.search('//header').remove
+        libray_page.search('//div[@class="rightMenu "]').remove
+        libray_page.search('//div[@id="outofmain"]').remove
+        libray_page.search('//a[@class="helpbtnarea"]').remove
+        libray_page.search('//div[@class="backbtnarea pc_txt_shadow"]').remove
+        libray_page.search('//div[@class="grid__row util__m0 util__mt20"]').remove
         
         delete_common_script(libray_page)
 
