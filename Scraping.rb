@@ -46,9 +46,9 @@ end
 
 def print_get(uri)
     print_str = "get #{uri}"
-    print print_str
+    # print print_str
     page = $agent.get(uri)
-    print "\r#{' ' * print_str.size}\r"
+    # print "\r#{' ' * print_str.size}\r"
     return page
 end
 
@@ -91,7 +91,7 @@ def get_uri_data(uri)
     rescue Mechanize::ResponseCodeError => exception
         if exception.response_code == '403'
             # getのメッセージが残るので改行する
-            p "\n"
+            # p ""
             p uri.to_s + " has forbiddin."
             # STDERR.puts exception.backtrace.join("\n")
             return nil, false
