@@ -1,4 +1,4 @@
-#! /usr/bin/env ruby
+﻿#! /usr/bin/env ruby
 
 require 'nokogiri'
 require 'mechanize'
@@ -483,9 +483,9 @@ class Heroine
                 unless chara_name_to_src_hash.has_value?(chara["src"]) then
                     # pp "chara image transfer :" + chara["src"] + " to " + image_file_name + "."
                     update_content(scenario_setting_js_element, scenario_setting_js_element.content.gsub!(chara["src"], image_file_name))
-                end
-                chara_name_to_src_hash[name] = chara["src"]
             end
+                chara_name_to_src_hash[name] = chara["src"]
+        end
         end
 
         # シナリオデータ保存
@@ -760,4 +760,3 @@ if __FILE__ == $0
     rewrite_css_file
     rewrite_css_file
 end
-
