@@ -3,7 +3,7 @@
 # use
 
 1. git & ruby & gem install  
-`sudo apt install ruby gem`
+`sudo apt update;sudo apt install git ruby gem`
 
 2. install ruby gems  
 `gem install nokogiri mechanize`
