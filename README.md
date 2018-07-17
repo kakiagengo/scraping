@@ -15,4 +15,4 @@
 chromeのF12 > Networkタブ参照
 
 5. run  
-`cd scraping; ./Scraping.rb`
+`cd scraping; ./Scraping.rb | tee log.txt`
