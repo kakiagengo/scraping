@@ -92,9 +92,12 @@ def get_uri_data(uri)
         if exception.response_code == '403'
             # getのメッセージが残るので改行する
             # p ""
-            p uri.to_s + " has forbiddin."
+            p uri.to_s + " has 403 forbiddin."
             # STDERR.puts exception.backtrace.join("\n")
             return nil, false
+        elsif exception.response_code == '502'
+            p uri.to_s + " has 502 Bad Gateway.retry..."
+            return agent_get(uri), true
         else
             raise # Some other error, re-raise
         end
@@ -660,15 +663,20 @@ if __FILE__ == $0
             end
 
             # storyページの保存
-            # TODO default start 1
-            (1..heroine_page.search("div.grid__col_md_5 > a").count).each{|n|
-                output_story_path, success = now_heroine.output_story_page(n)
+            story_links = heroine_page.search("div.grid__col_md_5 > a")
+            story_links.each_with_index do |link, n|
+                index = n + 1
+                
+                # 出力
+                output_story_path, success = now_heroine.output_story_page(index)
                 unless success then
-                    p now_heroine.card_key + "_" + now_heroine.name + "_" + now_heroine.rare + ", scene: " + n.to_s + " has not found."
-                    break
+                   p now_heroine.card_key + "_" + now_heroine.name + "_" + now_heroine.rare + ", scene: " + index.to_s + " has not found."
                 end
+                # URL書き換え
+                link["href"] = "./#{now_heroine.heroine_directory_name}/scenario_#{index.to_s}.html"
+
                 # break # テスト用 TODO delete
-            }
+            end
 
             # htmlの編集 > 全てのHTMLに適応？
             # 不要な要素
@@ -686,10 +694,20 @@ if __FILE__ == $0
                 # pp "info: " + now_heroine.heroine_directory_name + " card page btn_primary has not found."
             end
 
+
+            # リンクの書き換えの前に同名ヒロインブロックを削除する
+            # h4がある場合 btn_arrow_back までの a, div, br 要素を削除
+            heroine_page.search('//div[@class="flex_panel type4"][last()]/following-sibling::node()[following-sibling::a[@class="btn_arrow_back "]]').remove
+            # pp heroine_page.search('//div[@class="flex_panel type4"][last()]')
+            # pp heroine_page.search('a[@class="btn_arrow_back "]')
+            # pp heroine_page.search('//div[@class="flex_panel type4"][last()]/following-sibling::node()[following-sibling::a[@class="btn_arrow_back "]]')
+
+
             delete_common_script(heroine_page)
 
             # 個別
             heroine_page.search("//script").last.remove # menu関係操作用
+            heroine_page.search('////*[@id="top"]/div[@class="h_block"]/div[div[span[text()="洗脳度:"]]]').remove
             
             # htmlの編集グローバルファイルで書き換え
             # 画像
@@ -706,16 +724,7 @@ if __FILE__ == $0
             # storyへの遷移を自己リンクへ変更する
             add_html_mapping("http://noahgate.com/story/show?card_key=" + now_heroine.card_key, "./" + now_heroine.heroine_directory_name + ".html")
 
-            # リンクの書き換えの前に同名ヒロインブロックを削除する
-            # h4の次の a, div, br 要素を削除
-            same_name_heroine = heroine_page.search('//h4')
-            unless same_name_heroine.nil? then
-                heroine_page.search('//h4/following-sibling::a[1]').remove
-                heroine_page.search('//h4/following-sibling::div[1]').remove
-                heroine_page.search('//h4/following-sibling::br[1]').remove
-                # 起点となるh4は最後に消す
-                same_name_heroine.remove
-            end
+
 
             # linkの書き換え
             common_a_link_rewrite(heroine_page)
