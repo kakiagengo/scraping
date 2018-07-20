@@ -13,6 +13,9 @@ $heroine_base_url = "http://noahgate.com/library/show?card_key="
 $heroine_hitokoto_base_uri = "http://d3f1nvrmws0ea2.cloudfront.net/sound/voice/"
 $dir_path = "./data/"
 $global_dir = "global/"
+$global_setting_heroine_mode = false # ヒロインページのみ保存して scenario ページを保存しないフラグ
+
+# グローバル変数
 $global_noah_flag = false # ノアの共用シーン画像保存フラグ
 
 # ここにブラウザのCookieから取得したSessionIDを入れる
@@ -668,9 +671,11 @@ if __FILE__ == $0
                 index = n + 1
                 
                 # 出力
-                output_story_path, success = now_heroine.output_story_page(index)
-                unless success then
-                   p now_heroine.card_key + "_" + now_heroine.name + "_" + now_heroine.rare + ", scene: " + index.to_s + " has not found."
+                unless $global_setting_heroine_mode then
+                    output_story_path, success = now_heroine.output_story_page(index)
+                    unless success then
+                    p now_heroine.card_key + "_" + now_heroine.name + "_" + now_heroine.rare + ", scene: " + index.to_s + " has not found."
+                    end
                 end
                 # URL書き換え
                 link["href"] = "./#{now_heroine.heroine_directory_name}/scenario_#{index.to_s}.html"
