@@ -15,6 +15,8 @@ $dir_path = "./data/"
 $global_dir = "global/"
 $global_setting_heroine_mode = false # ヒロインページのみ保存して scenario ページを保存しないフラグ
 
+pp "heroin_mode is #{$global_setting_heroine_mode}"
+
 # グローバル変数
 $global_noah_flag = false # ノアの共用シーン画像保存フラグ
 
@@ -574,7 +576,7 @@ if __FILE__ == $0
 
     libray_page_number = 1 # TODO default 1
     while true
-    pp "now libray_libray_page_number:" + libray_page_number.to_s + " scraping."
+    pp "now libray_page_number:" + libray_page_number.to_s + " scraping."
         # アルバム一覧ページ取得
         libray_page = get_uri_html($page_base_url + libray_page_number.to_s)
 
