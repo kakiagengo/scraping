@@ -39,13 +39,30 @@ def agent_get(uri)
     else
         parsed_uri = uri
     end
-
+    begin
     if parsed_uri.host == "noahgate.com" then
         # pp "wait_get:" + parsed_uri.to_s
         return wait_get(parsed_uri)
     else
         # pp "no_wait_get:" + parsed_uri.path
         return no_wait_get(parsed_uri)
+    end
+    rescue Mechanize::ResponseCodeError => exception
+        if exception.response_code == '403'
+            # getのメッセージが残るので改行する
+            # p ""
+            p uri.to_s + " has 403 forbiddin."
+            # STDERR.puts exception.backtrace.join("\n")
+            return nil, false
+        elsif exception.response_code == '502'
+            p uri.to_s + " has 502 Bad Gateway.retry..."
+            return agent_get(uri), true
+        end
+        pp exception
+        raise # Some other error, re-raise
+    rescue => exception
+        pp exception
+        return agent_get(uri), true # 謎エラーはリトライ
     end
 end
 
@@ -91,22 +108,7 @@ end
 # キャッシュ使用データ取得用メソッド
 # Mechanize::Page::XXXXX オブジェクトを返す
 def get_uri_data(uri)
-    begin
-        return agent_get(uri), true
-    rescue Mechanize::ResponseCodeError => exception
-        if exception.response_code == '403'
-            # getのメッセージが残るので改行する
-            # p ""
-            p uri.to_s + " has 403 forbiddin."
-            # STDERR.puts exception.backtrace.join("\n")
-            return nil, false
-        elsif exception.response_code == '502'
-            p uri.to_s + " has 502 Bad Gateway.retry..."
             return agent_get(uri), true
-        else
-            raise # Some other error, re-raise
-        end
-    end
 end
 
 # uriからローカル保存用ファイル名に翻訳
