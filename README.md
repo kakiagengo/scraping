@@ -15,7 +15,7 @@ no support.
 or  
 `sudo gem install nokogiri mechanize`
 
-3. git clone 
+3. git clone  
 `git clone --depth 1 https://github.com/kakiagengo/scraping.git`
 
 4. edit session id  
