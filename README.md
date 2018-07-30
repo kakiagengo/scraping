@@ -22,6 +22,6 @@ or
 chromeのF12 > Networkタブ参照
 
 5. run  
-改行コードが混じっているため、`./Scraping.rb`では実行しないでください。
+改行コードが混じっているため、`./Scraping.rb`では実行しないでください。  
 `cd scraping`  
 `ruby Scraping.rb`
