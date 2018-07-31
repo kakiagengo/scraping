@@ -42,10 +42,10 @@ def agent_get(uri)
     begin
     if parsed_uri.host == "noahgate.com" then
         # pp "wait_get:" + parsed_uri.to_s
-        return wait_get(parsed_uri)
+            return wait_get(parsed_uri), true
     else
         # pp "no_wait_get:" + parsed_uri.path
-        return no_wait_get(parsed_uri)
+            return no_wait_get(parsed_uri), true
     end
     rescue Mechanize::ResponseCodeError => exception
         if exception.response_code == '403'
@@ -56,13 +56,13 @@ def agent_get(uri)
             return nil, false
         elsif exception.response_code == '502'
             p uri.to_s + " has 502 Bad Gateway.retry..."
-            return agent_get(uri), true
+            return agent_get(uri)
         end
         pp exception
         raise # Some other error, re-raise
     rescue => exception
         pp exception
-        return agent_get(uri), true # 謎エラーはリトライ
+        return agent_get(uri) # 謎エラーはリトライ
     end
 end
 
@@ -102,13 +102,14 @@ $agent.request_headers = {
 # キャッシュ使用データ取得用メソッド
 # Mechanize::Page オブジェクトを返す
 def get_uri_html(uri)
-    return agent_get(URI.parse(WEBrick::HTTPUtils.escape(uri)))
+    page, success = agent_get(URI.parse(WEBrick::HTTPUtils.escape(uri)))
+    return page
 end
 
 # キャッシュ使用データ取得用メソッド
-# Mechanize::Page::XXXXX オブジェクトを返す
+# Mechanize::Page::XXXXX, 成功(boolean) を返す
 def get_uri_data(uri)
-            return agent_get(uri), true
+    return agent_get(uri)
 end
 
 # uriからローカル保存用ファイル名に翻訳
@@ -201,7 +202,7 @@ def output_global_data(uri)
             if success then
                 data.save!(file_path)
             else
-                p "could not get " + file_name + " from " + uri.to_s
+                p "could not get " + file_path + " from " + uri.to_s
             end
         end
         $global_uri_mapping[uri] = file_name
